@@ -47,6 +47,7 @@ let print_list x =
   (print_string "<";aux_print_list x;print_string ">");;
 
 (* boolean + arithmetical terms *)
+
 type term =
     TmTrue
   |TmFalse
