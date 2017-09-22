@@ -47,7 +47,6 @@ let print_list x =
   (print_string "<";aux_print_list x;print_string ">");;
 
 (* boolean + arithmetical terms *)
-
 type term =
     TmTrue
   |TmFalse
@@ -59,7 +58,7 @@ type term =
   |TmError
 
 (* to display terms *)
-
+exception NOT_A_VALUE
 let rec show x =
   match x with
   |TmZero -> "0"
