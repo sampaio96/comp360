@@ -59,6 +59,7 @@ type term =
 
 (* to display terms *)
 exception NOT_A_VALUE
+
 let rec show x =
   match x with
   |TmZero -> "0"
@@ -132,7 +133,7 @@ let lexx x = aux_lexx (explode x);;
  * calls aux_parse on de-parenthesized terms
  *)
 (* aux_parse : string list -> term * string list = <fun> *)
-let rec   aux_parse tokens = (* parse if..then..else terms *)
+let rec aux_parse tokens = (* parse if..then..else terms *)
   match tokens with
     |[] -> (TmError,[])
     |("if"::rest) -> 
