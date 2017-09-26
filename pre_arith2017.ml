@@ -52,9 +52,9 @@ type term =
   |TmFalse
   |TmIf of (term * term * term)
   |TmZero
-  |TmSucc of term
-  |TmPred of term
-  |TmIsZero of term
+  |TmSucc of (term)
+  |TmPred of (term)
+  |TmIsZero of (term)
   |TmError
 
 (* to display terms *)
@@ -146,14 +146,15 @@ let rec aux_parse tokens = (* parse if..then..else terms *)
       in (TmIf (t1,t2,t3),rest3)
     |("succ"::rest) ->
       let (t', rest1) = aux_parse_subterm rest in
-        (TmSucc(t'), rest1)
+        (TmSucc (t'), rest1)
     |("pred"::rest) ->
       let (t', rest1) = aux_parse_subterm rest in
-        (TmPred(t'), rest1)
+        (TmPred ( t' ), rest1)
     |("iszero"::rest) ->
       let (t', rest1) = aux_parse_subterm rest in
-        (TmIsZero(t'), rest1) 
-    | x ->aux_parse_subterm x
+        (TmIsZero (t'), rest1) 
+    | x ->aux_parse_subterm x 
+
 and
     aux_parse_subterm tokens = 
   match tokens with
@@ -161,10 +162,21 @@ and
     |("("::rest) ->
       let (tm, remainder) = aux_parse rest in
       let (tok_rparen::remainder_after_rparen) = remainder in
-	(tm,remainder_after_rparen) (* throw away right parenthesis *)
+	       (tm,remainder_after_rparen) (* throw away right parenthesis *)
     |("true"::tokens_rest) -> (TmTrue,tokens_rest)
     |("false"::tokens_rest) -> (TmFalse,tokens_rest)
-    |("0"::tokens_rest) -> (TmZero, tokens_rest) 
+    |("0"::tokens_rest) -> (TmZero, tokens_rest)
+
+    |("succ"::rest) ->
+      let (t', rest1) = aux_parse_subterm rest in
+        (TmSucc (t'), rest1)
+    |("pred"::rest) ->
+      let (t', rest1) = aux_parse_subterm rest in
+        (TmPred ( t' ), rest1)
+    |("iszero"::rest) ->
+      let (t', rest1) = aux_parse_subterm rest in
+        (TmIsZero (t'), rest1) 
+
     |x -> ((print_list (["x = "]@x)); (TmError, []));; (* debug errors *)
 
 
