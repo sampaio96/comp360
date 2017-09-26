@@ -144,6 +144,15 @@ let rec aux_parse tokens = (* parse if..then..else terms *)
       let (tok_else::rest_else) = rest2 in (* throw away else *)
       let (t3,rest3) = aux_parse_subterm rest_else
       in (TmIf (t1,t2,t3),rest3)
+    |("succ"::rest) ->
+      let (t', rest1) = aux_parse_subterm rest in
+        (TmSucc(t'), rest1)
+    |("pred"::rest) ->
+      let (t', rest1) = aux_parse_subterm rest in
+        (TmPred(t'), rest1)
+    |("iszero"::rest) ->
+      let (t', rest1) = aux_parse_subterm rest in
+        (TmIsZero(t'), rest1) 
     | x ->aux_parse_subterm x
 and
     aux_parse_subterm tokens = 
