@@ -138,12 +138,13 @@ let rec aux_parse tokens = (* parse if..then..else terms *)
     |[] -> (TmError,[])
     |("if"::rest) -> 
       let (t1, rest1) = aux_parse_subterm rest in 
+      (*  if t1!=TmTrue and t1!=TmFalse then NO_RULE else *)
       let (tok_then::rest_then) = rest1 in (* throw away then *)
       let (t2, rest2) = aux_parse_subterm rest_then in
       let (tok_else::rest_else) = rest2 in (* throw away else *)
       let (t3,rest3) = aux_parse_subterm rest_else
       in (TmIf (t1,t2,t3),rest3)
-      |x ->aux_parse_subterm x
+    | x ->aux_parse_subterm x
 and
     aux_parse_subterm tokens = 
   match tokens with
@@ -154,6 +155,7 @@ and
 	(tm,remainder_after_rparen) (* throw away right parenthesis *)
     |("true"::tokens_rest) -> (TmTrue,tokens_rest)
     |("false"::tokens_rest) -> (TmFalse,tokens_rest)
+    |("0"::tokens_rest) -> (TmZero, tokens_rest) 
     |x -> ((print_list (["x = "]@x)); (TmError, []));; (* debug errors *)
 
 
@@ -170,6 +172,11 @@ let is_a_value x =
    |TmZero -> true
    |x -> false;;
 
+let rec isnumericval t = match t with 
+TmZero -> true
+| TmSucc(t1) -> isnumericval t1
+| _ -> false
+
 exception NO_RULE;;
 
 (* single small step eval EXPAND TO INCLUDE arithmetic *)
@@ -180,6 +187,19 @@ let rec eval_step t =
   |TmIf(t1,t2,t3) ->
      let t1' = eval_step t1 in
        TmIf(t1',t2,t3)
+  |TmSucc(t1) -> 
+    let t1' = eval_step t1 in
+      TmSucc(t1')
+  | TmPred(TmZero) -> TmZero
+  | TmPred(TmSucc(nv1)) when (isnumericval nv1)  -> nv1
+  | TmPred(t1) ->
+    let t1' = eval_step t1 in
+      TmPred(t1')
+  | TmIsZero(TmZero) -> TmTrue
+  | TmIsZero(TmSucc(nv1)) when (isnumericval nv1) -> TmFalse
+  | TmIsZero(t1) ->
+        let t1' = eval_step t1 in
+            TmIsZero(t1')
   |_ -> raise NO_RULE;;
 
 (* and the evaluation sequences it induces *)
@@ -214,16 +234,48 @@ let rec big_step t =
 	 else raise BAD_GUARD
     |_ -> raise NO_RULE;;
 
+
 (* slightly slicker *)
-let rec ss_big_step t =
+ let rec ss_big_step t =
     match t with
-    |TmTrue -> TmTrue
+     TmTrue -> TmTrue
     |TmFalse -> TmFalse
-    |TmIf(t1,t2,t3)  when (ss_big_step t1 = TmTrue) ->
-       (ss_big_step t2)
-    |TmIf(t1,t2,t3) when (ss_big_step t1 = TmFalse) ->
-       (ss_big_step t3)
-    |_ -> TmError;;
+    |TmZero -> TmZero
+
+   |TmIf(t1,t2,t3) ->
+        let v1 = ss_big_step t1 in
+        (match v1 with 
+          TmTrue -> let v2 = ss_big_step t2 in v2
+          | TmFalse -> let v3 = ss_big_step t3 in v3
+          | _ -> raise NO_RULE )
+
+    | TmSucc(t1) ->
+        let v1 = ss_big_step t1 in
+        (match isnumericval(v1) with 
+          true -> TmSucc (v1)
+          | _ -> raise NO_RULE )
+
+     | TmPred(t1) -> 
+        let v1 = ss_big_step t1 in
+        (match isnumericval(v1) with
+          true -> (match v1 with 
+                TmZero -> TmZero
+                | TmSucc(u) -> u
+                )
+          | _ -> raise NO_RULE )
+
+  | TmIsZero(t1) -> 
+         let v1 = ss_big_step t1 in
+         (match isnumericval (v1) with
+          true -> (match v1 with 
+                TmZero -> TmTrue
+                  | TmSucc(u) -> TmFalse
+                )  
+                
+          | _ -> raise NO_RULE )
+          
+    | _ -> raise NO_RULE;;
+
 
 
 (* infix composition *)
