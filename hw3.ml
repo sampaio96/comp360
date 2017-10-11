@@ -488,7 +488,6 @@ let non_abstraction t =
 (* normal order *)
 (* remember to handle the booleans TmIf,TmTrue,TmFalse *)
 let rec big_step t =
-<<<<<<< HEAD
   match t with 
    TmIf (t1,t2,t3) ->
   |TmTrue ->
