@@ -495,7 +495,6 @@ let rec big_step t =
   |TmAbs(s,t)-> TmAbs(x,y)
   |TmApp (t1, t2) -> 
 
-
 (* resets free-variable counter to 0 before evaluating big_step cbv *)
 let top_big_step t =
   x := 0;
