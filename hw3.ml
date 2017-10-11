@@ -366,16 +366,23 @@ AVOIDING CAPTURE
 (* to be completed by YOU *)
 let rec subst var s term =
   match term with
-  |TmTrue -> 
-  |TmFalse ->
+  |TmTrue -> TmTrue
+  |TmFalse -> TmFalse
   |TmVar y -> if (y=var)
 	      then s
 	      else term
-  |TmApp(t1,t2) ->
-  |TmAbs(y,t) -> (* here is where you must avoid capture by generating *)
-                 (* a new var and renaming. Remember to check if y=var *)
+  |TmApp(t1,t2) -> TmApp(subst var s t1, subst var s t2)
+  |TmAbs(y,t) -> if (y=var) 
+               then term
+               else 
+               let newvar = make_new_var() in
+               let ren = rename(y, newvar, t) in
+               TmAbs(newvar, subst var s ren)
+
+                (* here is where you must avoid capture by generating *)
+                (* a new var and renaming. Remember to check if y=var *)
     
-  |TmIf(t1,t2,t3) ->
+  |TmIf(t1,t2,t3) -> TmIf(subst var s t1, subst var s t2, subst var s t3)
 
   
 
@@ -489,9 +496,9 @@ let non_abstraction t =
 (* remember to handle the booleans TmIf,TmTrue,TmFalse *)
 let rec big_step t =
   match t with 
-   TmIf (t1,t2,t3) ->
-  |TmTrue ->
-  |TmFalse ->
+   TmIf (t1,t2,t3) -> 
+  |TmTrue -> TmTrue
+  |TmFalse -> TmFalse
   |TmAbs(s,t)-> TmAbs(x,y)
   |TmApp (t1, t2) -> 
 
@@ -504,6 +511,12 @@ let top_big_step t =
 (* remember to handle the booleans TmIf,TmTrue,TmFalse *)    
 let rec big_step_cbv t =
   match t with
+   TmTrue -> TmTrue
+  |TmFalse -> TmFalse
+  |TmIf (t1,t2,t3) -> 
+  |TmAbs(s,t)-> TmAbs(x,y)
+  |TmApp (t1, t2) -> 
+
  
 
 (* resets free-variable counter to 0 before evaluating big_step cbv *)
