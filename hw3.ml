@@ -401,7 +401,9 @@ exception BAD_GUARD;;
 (* to be completed by YOU *)
 let is_val tm = 
   match tm with
-  TmAbs(a,b) -> true
+  |TmAbs(a,b) -> true
+  |TmTrue -> true
+  |TmFalse -> true
   |_ -> false
 
 
@@ -508,21 +510,22 @@ let non_abstraction t =
 
 let rec big_step t =
   match t with 
-  |TmTrue -> TmTrue
-  |TmFalse -> TmFalse
+  |v when (is_a_nf v) -> v
   |TmIf (t1,t2,t3) -> let t = big_step t1 in 
                       if (t=TmTrue) 
                       then big_step t2 
                       else 
                            if (t=TmFalse) 
                            then big_step t3 
-                           else raise BAD_GUARD;
+                           else (print_string(show t); raise BAD_GUARD;)
   |TmAbs(s,t)-> TmAbs(s, big_step t)
   |TmApp (t1, t2) -> (match big_step t1 with
-                      | TmAbs(s,t) -> big_step (subst s t2 t)
-                      | TmVar (x) -> TmApp (t1, big_step t2)
-                      | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2)
-                      | _ -> raise NO_RULE;)
+                      | TmVar (_) -> TmApp(t1, big_step t2)
+                      | TmTrue -> TmApp(t1, big_step t2)
+                      | TmFalse -> TmApp(t1, big_step t2)
+                      | TmAbs(s,t) -> big_step (subst s t2 t);
+                      | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2) 
+                      | _ -> raise NO_RULE;) 
   | _ -> raise NO_RULE;;
 
 (* resets free-variable counter to 0 before evaluating big_step cbv *)
@@ -535,8 +538,7 @@ let top_big_step t =
 (* remember to handle the booleans TmIf,TmTrue,TmFalse *)    
 let rec big_step_cbv t =
   match t with
-   TmTrue -> TmTrue
-  |TmFalse -> TmFalse
+  |v when (is_val v) -> v
   |TmIf (t1,t2,t3) -> let t = big_step_cbv t1 in 
                       if (t=TmTrue) 
                       then big_step_cbv t2 
@@ -544,13 +546,14 @@ let rec big_step_cbv t =
                            if (t=TmFalse) 
                            then big_step_cbv t3 
                            else raise BAD_GUARD;
-  |TmAbs(s,t)-> TmAbs (s,t)
   |TmApp (t1, t2) -> ( match big_step_cbv t1 with
-                          TmAbs(x, t12) -> let v2 = big_step_cbv t2 in 
-                                                 ( match is_val(v2) with
-                                                    true -> let t' = subst x v2 t12 in t'
-                                                   |false -> raise NO_RULE; )
-                          |_ -> raise NO_RULE; )
+                          | TmTrue -> raise NO_RULE1;
+                          | TmFalse -> raise NO_RULE1;
+                          | TmAbs(x, t12) -> let v2 = big_step_cbv t2 in 
+                                                 ( match v2 with
+                                                   |TmAbs(_,_) -> let t' = subst x v2 t12 in t'
+                                                   |_ -> raise NO_RULE; )
+                          | _ -> raise NO_RULE; )
   |_ -> raise NO_RULE;; 
 
  
@@ -702,9 +705,9 @@ let rec app n t x =
   (* tests *)
   times 6 7;;
     exp 2 3;;
-  factorial 4;;
+   factorial 4;; 
     factorial_cbv 4;;
-      factorialY 4;;
+      factorialY 4;; 
 
 
 (* using big-step *)
@@ -715,7 +718,7 @@ let rec app n t x =
 	      (church2num (big_step_cbv (TmApp(fact_cbv,num2church n))));;
 
 (* tests *)
-	      big_step_factorial 4;;
+	      big_step_factorial 4;; 
 		big_step_cbv_factorial 4;;
 	    
 	  
