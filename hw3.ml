@@ -88,7 +88,7 @@ let print_list x =
   (print_string "<";aux_print_list x;print_string ">");;
 
 (* lambda terms *)
-
+exception TM_ERROR
 
 type term =
    TmVar of string
@@ -275,7 +275,7 @@ let rec parseOneL lt =
     else aux_parseA (TmApp(tm,TmVar(s))) t
     
 
-
+exception NO_RULE;;
  	 
 let parse text = fst (parseL (lexx text));;
 let see_parse text = let (a,b) = parseL (lexx text) in
@@ -345,6 +345,7 @@ let rec rename name newname tm =
       let t2' = rename name newname t2 in
       let t3' = rename name newname t3 in
       TmIf(t1',t2',t3')
+    | _ -> raise NO_RULE;;
 		       
 
 (* counter for fresh variables *)
@@ -375,21 +376,22 @@ let rec subst var s term =
   |TmAbs(y,t) -> if (y=var) 
                then term
                else 
-               let newvar = make_new_var() in
-               let ren = rename(y, newvar, t) in
+               let newvar = make_fresh_var() in
+               let ren = rename y newvar t in
                TmAbs(newvar, subst var s ren)
 
                 (* here is where you must avoid capture by generating *)
                 (* a new var and renaming. Remember to check if y=var *)
     
   |TmIf(t1,t2,t3) -> TmIf(subst var s t1, subst var s t2, subst var s t3)
+  |_ -> raise NO_RULE;;
 
   
 
 
 (* Call By Value *)
 
-exception NO_RULE;;
+
 exception NO_RULE1;;
   
 exception BAD_GUARD;;
@@ -397,7 +399,11 @@ exception BAD_GUARD;;
 (* is a value*)
 (* is_val: term -> bool *)
 (* to be completed by YOU *)
-let is_val tm =
+let is_val tm = 
+  match tm with
+  TmAbs(a,b) -> true
+  |_ -> false
+
 
   (* computes one step of evaluation using call-by-value rules *)
 let rec eval_step_cbv t =
@@ -428,20 +434,25 @@ let top_cbv_eval t =
 
 (* tests whether or not input term is in normal form: to be completed by YOU.
 TmTrue,TmFalse are considered normal forms *)
+
 	   
 let rec is_a_nf tm = 
-  match tm with
-  |TmTrue -> 
-  |TmFalse ->
-  |TmIf(v,_,_) -> (* only a normal form if v is a normal form and is
-  NOT true or false, i.e. it's garbage *) 
-  |TmVar( _ ) ->
-  |TmApp(TmAbs(_,_),_) 
-  |TmApp(v,w) -> (* careful *)
-  |TmAbs(_,t) -> 
+  match tm with 
+   TmTrue -> true
+  |TmFalse -> true 
+  |TmIf(v,_,_) -> let b = (is_a_nf v) in
+                  let bb = ((not (v=TmTrue)) && (not (v=TmFalse))) in
+                    b && bb
+            (* only a normal form if v is a normal form and is
+            NOT true or false, i.e. it's garbage *) 
+  |TmVar( _ ) -> true 
+  |TmApp(TmAbs(_,_),_) -> false
+  |TmApp(v,w) -> let a = is_a_nf v in let b = is_a_nf w in a && b (* careful *)
+  |TmAbs(_,t) -> if is_a_nf t then true else false
+  |_ -> raise TM_ERROR;;
 
 
-  exception TM_ERROR
+  
   (* one evaluation step in normal order *)
 let rec no_step tm = 
   match tm with
@@ -494,18 +505,31 @@ let non_abstraction t =
 
 (* normal order *)
 (* remember to handle the booleans TmIf,TmTrue,TmFalse *)
+
 let rec big_step t =
   match t with 
-   TmIf (t1,t2,t3) -> 
   |TmTrue -> TmTrue
   |TmFalse -> TmFalse
-  |TmAbs(s,t)-> TmAbs(x,y)
-  |TmApp (t1, t2) -> 
+  |TmIf (t1,t2,t3) -> let t = big_step t1 in 
+                      if (t=TmTrue) 
+                      then big_step t2 
+                      else 
+                           if (t=TmFalse) 
+                           then big_step t3 
+                           else raise BAD_GUARD;
+  |TmAbs(s,t)-> TmAbs(s, big_step t)
+  |TmApp (t1, t2) -> (match big_step t1 with
+                      | TmAbs(s,t) -> big_step (subst s t2 t)
+                      | TmVar (x) -> TmApp (t1, big_step t2)
+                      | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2)
+                      | _ -> raise NO_RULE;)
+  | _ -> raise NO_RULE;;
 
 (* resets free-variable counter to 0 before evaluating big_step cbv *)
 let top_big_step t =
   x := 0;
   big_step t;;
+
   
 (* call-by-value big step: TO BE COMPLETED BY YOU *)
 (* remember to handle the booleans TmIf,TmTrue,TmFalse *)    
@@ -513,9 +537,21 @@ let rec big_step_cbv t =
   match t with
    TmTrue -> TmTrue
   |TmFalse -> TmFalse
-  |TmIf (t1,t2,t3) -> 
-  |TmAbs(s,t)-> TmAbs(x,y)
-  |TmApp (t1, t2) -> 
+  |TmIf (t1,t2,t3) -> let t = big_step_cbv t1 in 
+                      if (t=TmTrue) 
+                      then big_step_cbv t2 
+                      else 
+                           if (t=TmFalse) 
+                           then big_step_cbv t3 
+                           else raise BAD_GUARD;
+  |TmAbs(s,t)-> TmAbs (s,t)
+  |TmApp (t1, t2) -> ( match big_step_cbv t1 with
+                          TmAbs(x, t12) -> let v2 = big_step_cbv t2 in 
+                                                 ( match is_val(v2) with
+                                                    true -> let t' = subst x v2 t12 in t'
+                                                   |false -> raise NO_RULE; )
+                          |_ -> raise NO_RULE; )
+  |_ -> raise NO_RULE;; 
 
  
 
@@ -534,6 +570,10 @@ let rec make_num_body x =
   match x with
     |0 -> TmVar "z"
     |n -> TmApp(TmVar "s",make_num_body (n-1));;
+
+let rec make_church_body s z t = 0
+  
+  
 
 let num2church x = TmAbs("s",TmAbs("z",make_num_body x));;
 
