@@ -571,10 +571,6 @@ let rec make_num_body x =
     |0 -> TmVar "z"
     |n -> TmApp(TmVar "s",make_num_body (n-1));;
 
-let rec make_church_body s z t = 0
-  
-  
-
 let num2church x = TmAbs("s",TmAbs("z",make_num_body x));;
 
 exception BAD_NUMERAL;;
@@ -589,7 +585,7 @@ let rec translate_church_body s z x =
 let church2num x =
   let x' = no_eval x in
   match x' with
-  |(TmAbs(s,TmAbs(z,t))) -> make_church_body s z t
+  |(TmAbs(s,TmAbs(z,t))) -> translate_church_body s z t
   |_ -> raise BAD_NUMERAL;;
 
 
@@ -608,7 +604,7 @@ let maketimes t1 t2 =
   let text_times = "\\m.\\n.\\z.(m (n z))"
   in let times = parse text_times in
     TmApp(TmApp(times, t1'),t2');;
-	     
+       
        
 
 (***************)
