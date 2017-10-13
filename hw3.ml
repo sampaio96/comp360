@@ -520,7 +520,7 @@ let rec big_step t =
                            if (t1'=TmFalse) 
                            then big_step t3 
                            else (print_string(show t1); print_string "\n"; dt t1; raise BAD_GUARD)
-  |TmAbs(s,t1)-> TmAbs(s, big_step t1) (*??????????????????*)
+  |TmAbs(s,t1)-> TmAbs(s, big_step t1) 
   |TmApp (t1, t2) -> (match t1 with
                       | TmAbs(s,t) -> big_step (subst s t2 t)
                       | _ -> (match big_step t1 with
@@ -722,7 +722,7 @@ let rec app n t x =
 (* tests *)
         big_step_cbv_factorial 4;;
 
-   (* top_big_step_factorial 4;; *)  (* Hi Joomy :) This particular test is not running properly on normal order big step eval and raises exception BAD_GUARD all the time. We spent hours trying
+    top_big_step_factorial 4;;   (* Hi Joomy/Celeste :) This particular test is not running properly on normal order big step eval and raises exception BAD_GUARD all the time. We spent hours trying
         to fix it ourselves and also with Prof. Lipton, but unsuccessfully. It works absolutely fine for all lambda evaluations we checked not containing "if", as it should (see tests below), 
         but not on TmIf terms. We give up. *)
    
