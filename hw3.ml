@@ -393,6 +393,8 @@ let rec subst var s term =
 
 
 exception NO_RULE1;;
+exception NO_RULE2;;
+exception NO_RULE3;;
   
 exception BAD_GUARD;;
 
@@ -518,7 +520,7 @@ let rec big_step t =
                            if (t1'=TmFalse) 
                            then big_step t3 
                            else (print_string(show t); raise BAD_GUARD;)
-  |TmAbs(s,t)-> TmAbs(s, big_step t)
+  |TmAbs(s,t)-> TmAbs(s, big_step t) (*??????????????????*)
   |TmApp (t1, t2) -> (match t1 with
                       | TmAbs(s,t) -> big_step (subst s t2 t)
                       | _ -> (match big_step t1 with
@@ -527,7 +529,7 @@ let rec big_step t =
                               | TmFalse -> TmApp(t1, big_step t2)
                               | TmAbs(s,t) -> big_step (subst s t2 t)
                               | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2) 
-                              | _ -> raise NO_RULE;))
+                              | _ -> raise NO_RULE1;))
   | _ -> raise NO_RULE;;
 
 (* resets free-variable counter to 0 before evaluating big_step cbv *)
@@ -553,10 +555,12 @@ let rec big_step_cbv t =
                           | TmFalse -> raise NO_RULE1;
                           | TmAbs(x, t12) -> let v2 = big_step_cbv t2 in 
                                                  ( match v2 with
-                                                   |TmAbs(_,_) -> let t' = subst x v2 t12 in t'
-                                                   |_ -> raise NO_RULE; )
-                          | _ -> raise NO_RULE; )
-  |_ -> raise NO_RULE;; 
+                                                   |TmTrue -> let t' = subst x v2 t12 in big_step_cbv t'
+                                                   |TmFalse -> let t' = subst x v2 t12 in big_step_cbv t'
+                                                   |TmAbs(_,_) -> let t' = subst x v2 t12 in big_step_cbv t' (* after plugging in v2, we may get an application again! *)
+                                                   |_ -> raise NO_RULE1; )
+                          | _ -> raise NO_RULE2; )
+  |_ -> raise NO_RULE3;; 
 
  
 
@@ -723,7 +727,8 @@ let rec app n t x =
         big_step_cbv_factorial 4;;
 	      big_step_factorial 4;; 
 		
-	    
-	  
+	show (big_step_cbv (parse "(\\x.x) ((\\x.x) (\\z. (\\x.x) z))"));;    
+	show (big_step (parse "(\\x.x) ((\\x.x) (\\z. (\\x.x) z))"));;
+
 	
 		  
