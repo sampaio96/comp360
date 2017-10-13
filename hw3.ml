@@ -522,7 +522,9 @@ let rec big_step t =
   |TmApp (t1, t2) -> (match t1 with
                       | TmAbs(s,t) -> big_step (subst s t2 t)
                       | _ -> (match big_step t1 with
-                              | v when (is_a_nf v) -> TmApp(v, big_step t2)
+                              | TmVar (_) -> TmApp(t1, big_step t2)
+                              | TmTrue -> TmApp(t1, big_step t2)
+                              | TmFalse -> TmApp(t1, big_step t2)
                               | TmAbs(s,t) -> big_step (subst s t2 t)
                               | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2) 
                               | _ -> raise NO_RULE;))
