@@ -720,8 +720,9 @@ let rec app n t x =
 	      (church2num (big_step_cbv (TmApp(fact_cbv,num2church n))));;
 
 (* tests *)
+        big_step_cbv_factorial 4;;
 	      big_step_factorial 4;; 
-		big_step_cbv_factorial 4;;
+		
 	    
 	  
 	
