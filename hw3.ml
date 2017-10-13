@@ -519,13 +519,15 @@ let rec big_step t =
                            then big_step t3 
                            else (print_string(show t); raise BAD_GUARD;)
   |TmAbs(s,t)-> TmAbs(s, big_step t)
-  |TmApp (t1, t2) -> (match big_step t1 with
-                      | TmVar (_) -> TmApp(t1, big_step t2)
-                      | TmTrue -> TmApp(t1, big_step t2)
-                      | TmFalse -> TmApp(t1, big_step t2)
-                      | TmAbs(s,t) -> big_step (subst s t2 t);
-                      | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2) 
-                      | _ -> raise NO_RULE;) 
+  |TmApp (t1, t2) -> (match t1 with
+                      | TmAbs(s,t) -> big_step (subst s t2 t)
+                      | _ -> (match big_step t1 with
+                              | TmVar (_) -> TmApp(t1, big_step t2)
+                              | TmTrue -> TmApp(t1, big_step t2)
+                              | TmFalse -> TmApp(t1, big_step t2)
+                              | TmAbs(s,t) -> big_step (subst s t2 t)
+                              | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2) 
+                              | _ -> raise NO_RULE;))
   | _ -> raise NO_RULE;;
 
 (* resets free-variable counter to 0 before evaluating big_step cbv *)
