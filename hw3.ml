@@ -721,9 +721,14 @@ let rec app n t x =
 
 (* tests *)
         big_step_cbv_factorial 4;;
-	   (* top_big_step_factorial 4;; *) 
-		
-	 show (big_step_cbv (parse "(\\x.x) ((\\x.x) (\\z. (\\x.x) z))"));;    
+
+   (* top_big_step_factorial 4;; *)  (* Hi Joomy :) This particular test is not running properly on normal order big step eval and raises exception BAD_GUARD all the time. We spent hours trying
+        to fix it ourselves and also with Prof. Lipton, but unsuccessfully. It works absolutely fine for all lambda evaluations we checked not containing "if", as it should (see tests below), 
+        but not on TmIf terms. We give up. *)
+   
+	(* Below tests are from the book (pp 57-58): *)
+
+   show (big_step_cbv (parse "(\\x.x) ((\\x.x) (\\z. (\\x.x) z))"));;    
 	 show (big_step (parse "(\\x.x) ((\\x.x) (\\z. (\\x.x) z))"));; 
 
   (*let t5 = parse "((\\_x72.((_x72 (\\_x73.false)) true)) _x39)" in (print_string "\n t5 = ";big_step t5);;*)
