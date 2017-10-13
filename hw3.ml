@@ -511,11 +511,11 @@ let non_abstraction t =
 let rec big_step t =
   match t with 
   |v when (is_a_nf v) -> v
-  |TmIf (t1,t2,t3) -> let t = big_step t1 in 
-                      if (t=TmTrue) 
+  |TmIf (t1,t2,t3) -> let t1' = big_step t1 in 
+                      if (t1'=TmTrue) 
                       then big_step t2 
                       else 
-                           if (t=TmFalse) 
+                           if (t1'=TmFalse) 
                            then big_step t3 
                            else (print_string(show t); raise BAD_GUARD;)
   |TmAbs(s,t)-> TmAbs(s, big_step t)
