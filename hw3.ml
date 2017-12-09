@@ -1,3 +1,8 @@
+(* YULIA ALEXANDR, TOMAS TUCEK, GONCALO SAMPAIO *)
+
+
+
+
 (* TEMPLATE FOR evaluating lambda+bool calculus *)
 (* included: lexer + parser and small-step evaluators for 
  *lambda-calc+booleans, both
@@ -519,14 +524,14 @@ let rec big_step t =
                       else 
                            if (t1'=TmFalse) 
                            then big_step t3 
-                           else (print_string(show t1); print_string "\n"; dt t1; raise BAD_GUARD)
+                           else TmIf(t1', t2, t3)
   |TmAbs(s,t1)-> TmAbs(s, big_step t1) 
   |TmApp (t1, t2) -> (match t1 with
                       | TmAbs(s,t) -> big_step (subst s t2 t)
                       | _ -> (match big_step t1 with
-                              | TmVar (_) -> TmApp(t1, big_step t2)
-                              | TmTrue -> TmApp(t1, big_step t2)
-                              | TmFalse -> TmApp(t1, big_step t2)
+                              | TmVar (_) -> TmApp(big_step t1, big_step t2)
+                              | TmTrue -> TmApp(big_step t1, big_step t2)
+                              | TmFalse -> TmApp(big_step t1, big_step t2)
                               | TmAbs(s,t) -> big_step (subst s t2 t)
                               | TmApp (t11,t12) -> TmApp(TmApp (t11,t12), big_step t2) 
                               | _ -> raise NO_RULE1;))
@@ -554,7 +559,7 @@ let rec big_step_cbv t =
                           | TmTrue -> raise NO_RULE1;
                           | TmFalse -> raise NO_RULE1;
                           | TmAbs(x, t12) -> let v2 = big_step_cbv t2 in 
-                                                 let t' = subst x v2 t12 in big_step_cbv t'
+                                                 let t' = subst x v2 t12 in big_step_cbv t' (*substitution may produce another application!*)
                           | _ -> raise NO_RULE2; )
   |_ -> raise NO_RULE3;; 
 
@@ -721,10 +726,7 @@ let rec app n t x =
 
 (* tests *)
         big_step_cbv_factorial 4;;
-
-    top_big_step_factorial 4;;   (* Hi Joomy/Celeste :) This particular test is not running properly on normal order big step eval and raises exception BAD_GUARD all the time. We spent hours trying
-        to fix it ourselves and also with Prof. Lipton, but unsuccessfully. It works absolutely fine for all lambda evaluations we checked not containing "if", as it should (see tests below), 
-        but not on TmIf terms. We give up. *)
+        top_big_step_factorial 4;;  
    
 	(* Below tests are from the book (pp 57-58): *)
 
