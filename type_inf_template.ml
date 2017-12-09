@@ -499,7 +499,12 @@ let rec make_constraints ctx tylm ty =
   match tylm with
   |TyVar y -> 
   |TyApp(t1,t2) ->
-  |TyAbs(x,tyx,t) ->
+  |TyAbs(x,tyx,t) -> let w = make_new_var in
+                     let u = make_constraints
+                             (x, tyx) :: ctx
+                             t
+                             var(w) in
+                     Eq(ty, Arr(Var(tyx),Var(w)))::u
  
   
 let t1 = parse "\\x.\\y.x y" in
