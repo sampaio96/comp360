@@ -480,7 +480,10 @@ let rec look varstring ctx =
 let rec typeof ctx tylm =
   match tylm with
   |(TyVar y) -> look y ctx
-  |(TyApp (t1,t2)) -> 
+  |(TyApp (t1,t2)) -> match typeof ctx t1 with
+                      | Var(a) -> raise (ERROR ("application is not well typed"))
+                      | Arr(a,b) -> let c = typeof ctx t2 in
+                          if (a = c) then b else raise (ERROR ("application is not well typed"))
   |TyAbs (s,a,t) -> Arr(a,typeof (s,a)::ctx t)
 
 
