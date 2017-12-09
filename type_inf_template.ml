@@ -262,7 +262,8 @@ let rec showtype ty =
     |Var y -> y
     |Arr (t1,t2) -> "("^(showtype t1)^"->"^(showtype t2)^")"
 
-(* convert typed lambda calculus terms to strings *)							   let rec showtylam tylm =
+(* convert typed lambda calculus terms to strings *)							   
+let rec showtylam tylm =
   match tylm with
     |TyVar y -> y
     |TyApp (t1,t2) -> "("^(showtylam t1)^" "^(showtylam t2)^")"
