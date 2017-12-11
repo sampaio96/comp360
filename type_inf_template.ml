@@ -484,7 +484,7 @@ let rec typeof ctx tylm =
   match tylm with
   |(TyVar y) -> look y ctx
   |(TyApp (t1,t2)) -> (match typeof ctx t1 with
-                      | Var(a) -> raise FAIL
+                      | Var(a) -> print_string("printing"); print_string(a); raise FAIL
                       | Arr(a,b) -> b)
                       (*let c = typeof ctx t2 in
                           if (a = c) then b else raise (ERROR ("application is not well typed"))) *)
