@@ -433,15 +433,21 @@ let rec occurs x t =
 (* unify a list of equations *)
 let rec unify lst =
   match lst with
-      [] -> 
-    | (Eq(x,y)::rest) when x=y -> 
-    | (Eq(Var(x),t)::rest) ->
-    | (Eq(t,Var(x))::rest) ->
-    | (Eq (Arr(a1,a2),Arr(b1,b2))::rest) ->
+      [] -> []
+    | (Eq(x,y)::rest) when x=y -> unify rest
+    | (Eq(Var(x),t)::rest) -> let rec occurs_eq_lst eq_lst y =
+                                              match eq_lst with
+                                                [] -> false
+                                                | (Eq(a,b)::rest) -> if (occurs y a || occurs y b) then true else (occurs_eq_lst rest y) in 
+                              if (occurs_eq_lst rest (Var(x)))
+                              then (if (occurs (Var(x)) t) then raise FAIL else unify (apply_to_list ((Var(x), t)::[]) rest)) 
+                              else (Var(x),t)::(unify rest)
+    | (Eq(t,Var(x))::rest) -> unify (Eq(Var(x),t)::rest)
+    | (Eq (Arr(a1,a2),Arr(b1,b2))::rest) -> unify (Eq(a1,b1)::(Eq(a2,b2)::rest))
 
 	  
 let sub2string sub =
-  "["^(showsub sub)^"]"
+  "["^(showsub_aseq sub)^"]" (* COME HERE DONT FORGET TO TELL LITPON *)
 
     
 
@@ -477,11 +483,12 @@ let rec look varstring ctx =
 let rec typeof ctx tylm =
   match tylm with
   |(TyVar y) -> look y ctx
-  |(TyApp (t1,t2)) -> match typeof ctx t1 with
-                      | Var(a) -> raise (ERROR ("application is not well typed"))
-                      | Arr(a,b) -> let c = typeof ctx t2 in
-                          if (a = c) then b else raise (ERROR ("application is not well typed"))
-  |TyAbs (s,a,t) -> Arr(a,typeof (s,a)::ctx t)
+  |(TyApp (t1,t2)) -> (match typeof ctx t1 with
+                      | Var(a) -> raise FAIL
+                      | Arr(a,b) -> b)
+                      (*let c = typeof ctx t2 in
+                          if (a = c) then b else raise (ERROR ("application is not well typed"))) *)
+  |(TyAbs (s,a,t)) -> Arr(a,(typeof ((s,a)::ctx) t))
 
 
 	 
@@ -494,30 +501,30 @@ equations between types to be unified.
 *)			     
 let rec make_constraints ctx tylm ty =
   match tylm with
-  |TyVar y -> Eq(typeof ctx y, ty)::[]
-  |TyApp(t1,t2) -> let w = make_new_var in
-                   let u1 = make_constraints ctx t1 Arr(Var(w), ty) in
-                   let u2 = make_constraints ctx t2 Var(w) in
+  |TyVar y -> ((Eq((typeof ctx (TyVar y)), ty))::[])
+  |TyApp(t1,t2) -> let w = make_new_var() in
+                   let u1 = make_constraints ctx t1 (Arr(Var (w), ty)) in
+                   let u2 = make_constraints ctx t2 (Var(w)) in
                    u1@u2
-  |TyAbs(x,tyx,t) -> let w = make_new_var in
+  |TyAbs(x,tyx,t) -> let w = make_new_var() in
                      let u = make_constraints
-                             (x, tyx) :: ctx
+                             ((x, tyx) :: ctx)
                              t
-                             var(w) in
-                     Eq(ty, Arr(Var(tyx),Var(w)))::u
+                             (Var(w)) in
+                     (Eq(ty, Arr(tyx,Var(w))))::u
  
-  
+  (* 
 let t1 = parse "\\x.\\y.x y" in
     let t2 = decorate t1 in
     let u = make_constraints [] t2 (Var("A")) in
     let u' = unify u in
     let t' = apply2term u' t2 in
-    (showtylam t',showtype (typeof [] t'));;
+    (showtylam t',showtype (typeof [] t'));; *)
     
 let type_inf ctx str =
   let t1 = parse str in
   let t2 = decorate t1 in
-  let u = make_constraints [] t2 (Var("A")) in
+  let u = make_constraints ctx t2 (Var("A")) in
   let u' = unify u in
   let t' = apply2term u' t2 in
   show_judgment ctx t' (typeof ctx t');;
