@@ -243,16 +243,12 @@ let plotkinfp = parse "\\f.(\\x.f (\\y.x x y)) (\\x.f (\\y.x x y))";;
 type lam = term
 
 (* for type expressions *)
-type arrow_type = Bool|Var of string|Arr of (arrow_type*arrow_type)
+type arrow_type = Bool | Var of string | Arr of (arrow_type*arrow_type)
 
 (* for typed lambda terms *)					      
-type tylam = TyVar of string|TyApp of (tylam*tylam) |
-    TyAbs of (string*arrow_type*tylam)
+type tylam = TyVar of string | TyApp of (tylam*tylam) | TyAbs of (string*arrow_type*tylam)
 
 
-
-
-	       
 
 
 (* convert type expressions into strings *)
@@ -438,7 +434,7 @@ let rec occurs x t =
 let rec unify lst =
   match lst with
       [] -> 
-    |(Eq(x,y)::rest) when x=y -> 
+    | (Eq(x,y)::rest) when x=y -> 
     | (Eq(Var(x),t)::rest) ->
     | (Eq(t,Var(x))::rest) ->
     | (Eq (Arr(a1,a2),Arr(b1,b2))::rest) ->
