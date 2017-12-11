@@ -497,8 +497,11 @@ equations between types to be unified.
 *)			     
 let rec make_constraints ctx tylm ty =
   match tylm with
-  |TyVar y -> 
-  |TyApp(t1,t2) ->
+  |TyVar y -> Eq(typeof ctx y, ty)::[]
+  |TyApp(t1,t2) -> let w = make_new_var in
+                   let u1 = make_constraints ctx t1 Arr(Var(w), ty) in
+                   let u2 = make_constraints ctx t2 Var(w) in
+                   u1@u2
   |TyAbs(x,tyx,t) -> let w = make_new_var in
                      let u = make_constraints
                              (x, tyx) :: ctx
