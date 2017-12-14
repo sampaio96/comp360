@@ -1,3 +1,6 @@
+(*---------------------------------------------------------FINAL PROJECT--------------------------------------------------------*)
+                                          (*YULIA ALEXANDR, TOMAS TUCEK, GONCALO SAMPAIO*)
+
 (* lexer and parser for the lambda calculus *)
 (* from older programs *)
 (* new stuff starts where it says *type inference* below *)
@@ -374,7 +377,6 @@ let rec  apply_to_noteq_list sub lst =
     |  [] -> []
     | ((t1,t2)::rest) ->
   (apply_noteq sub ((t1,t2)))::(apply_to_noteq_list sub rest)
-
 (* composition of substitutions *)
 
 (* remove:term list -> sub -> sub
@@ -437,7 +439,13 @@ let rec occurs x t =
     |(Var z, Var u) -> z=u
     |(Var z, Arr(t1,t2)) -> occurs x t1 || occurs x t2
     |_ -> false
+	 
 
+
+
+
+
+(*find out whether a variable occurs in a list of equations*)
 let rec occurs_eq_lst eq_lst y =
   match eq_lst with
     [] -> false
@@ -447,27 +455,25 @@ let rec occurs_noteq_lst noteq_lst y =
   match noteq_lst with
     [] -> false
     | ((a,b)::rest) -> if (occurs y a || occurs y b) then true else (occurs_noteq_lst rest y)
-	 
+   
   
 (* unify a list of equations *)
-let rec unify solved_lst lst =
+let rec unify lst =
   match lst with
-      [] -> solved_lst
-    | (Eq(x,y)::rest) when x=y -> unify solved_lst rest
-    | (Eq(Var(x),t)::rest) -> if ((occurs_noteq_lst solved_lst (Var(x))) || (occurs_eq_lst rest (Var(x))))
-                              then (if (occurs (Var(x)) t)
-                                    then raise FAIL
-                                    else unify
-                                         (apply_to_noteq_list ((Var(x), t)::[]) solved_lst)
-                                         (apply_to_list ((Var(x), t)::[]) rest)
-                                   )
-                              else unify ((Var(x),t)::solved_lst) rest
-    | (Eq(t,Var(x))::rest) -> unify solved_lst (Eq(Var(x),t)::rest)
-    | (Eq (Arr(a1,a2),Arr(b1,b2))::rest) -> unify solved_lst (Eq(a1,b1)::(Eq(a2,b2)::rest))
+      [] -> []
+    | (Eq(x,y)::rest) when x=y -> unify rest
+    | (Eq(Var(x),t)::rest) -> if (occurs (Var x) t)
+                              then raise FAIL
+                              else compose [(Var(x),t)] (unify (apply_to_list [(Var(x),t)] rest))
+    | (Eq(t,Var(x))::rest) -> unify (Eq(Var(x),t)::rest)
+    | (Eq (Arr(a1,a2),Arr(b1,b2))::rest) -> unify (Eq(a1,b1)::(Eq(a2,b2)::rest))
 
-	  
+
+
+
+
 let sub2string sub =
-  "["^(showsub_aseq sub)^"]" (* COME HERE DONT FORGET TO TELL LITPON *)
+  "["^(showsub_aseq sub)^"]"
 
     
 
@@ -498,9 +504,8 @@ let rec look varstring ctx =
     |((s,a)::rest) -> if (s=varstring) then a
       else look varstring rest;;
 
-(* compute the type of a simply typed lambda term in a given context *)
-	
-   exception LOL
+(* compute the type of a simply typed lambda term in a given context *)	
+exception LOL
 
 let rec typeof ctx tylm =
   match tylm with
@@ -508,16 +513,13 @@ let rec typeof ctx tylm =
   |(TyApp (t1,t2)) -> (match typeof ctx t1 with
                       | Var(a) -> print_string("printing"); print_string(a); raise LOL
                       | Arr(a,b) -> b)
-                      (*let c = typeof ctx t2 in
-                          if (a = c) then b else raise (ERROR ("application is not well typed"))) *)
-  |(TyAbs (s,a,t)) -> Arr(a,(typeof ((s,a)::ctx) t))
+  |(TyAbs (s,a,t)) -> Arr(a,(typeof ((s,a)::ctx) t));;
 
 
 	 
 (*
 make_constraints:
 (string * arrow_type) list -> tylam -> arrow_type -> eqn list
-
 takes a judgment: \Gamma |- tylam : ty  and generates a list of 
 equations between types to be unified.
 *)			     
@@ -533,24 +535,24 @@ let rec make_constraints ctx tylm ty =
                              ((x, tyx) :: ctx)
                              t
                              (Var(w)) in
-                     (Eq(ty, Arr(tyx,Var(w))))::u
+                     (Eq(ty, Arr(tyx,Var(w))))::u;;
  
-  (* 
+  
 let t1 = parse "\\x.\\y.x y" in
     let t2 = decorate t1 in
     let u = make_constraints [] t2 (Var("A")) in
     let u' = unify u in
     let t' = apply2term u' t2 in
-    (showtylam t',showtype (typeof [] t'));; *)
+    (showtylam t',showtype (typeof [] t'));;    
     
 let type_inf ctx str =
   let t1 = parse str in
   let t2 = decorate t1 in
   let u = make_constraints ctx t2 (Var("A")) in
-  let u' = unify [] u in
+  let u' = unify u in
   let t' = apply2term u' t2 in
   show_judgment ctx t' (typeof ctx t');;
-		     
+
   
   (* tests *)
 
